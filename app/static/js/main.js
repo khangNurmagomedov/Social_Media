@@ -49,7 +49,7 @@ async function loadUserProfile() {
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       `;
-      
+
       // Poll notifications initially and every 5 seconds
       fetchNotifications();
       setInterval(fetchNotifications, 5000);
@@ -172,9 +172,9 @@ function renderFeed(photos) {
           ` : ''}
         </div>
 
-        <!-- Main Photo Display -->
-        <div class="relative aspect-square squircle-frame overflow-hidden bg-black border border-white/5 cursor-pointer group" onclick="openPhotoModal('${photo.imageUrl}', '${escapeHtml(photo.senderName)}', '${escapeHtml(photo.caption || '')}', '${timeAgo}')">
-          <img src="${photo.imageUrl}" alt="Locket photo" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300">
+        <!-- Main Photo Display (double-tap to like) -->
+        <div id="photo-frame-${photo.id}" class="relative aspect-square squircle-frame overflow-hidden bg-black border border-white/5 cursor-pointer group" ondblclick="handleDoubleTap(event, '${photo.id}')" onclick="handleSingleTap('${photo.imageUrl}', '${escapeHtml(photo.senderName)}', '${escapeHtml(photo.caption || '')}', '${timeAgo}')">
+          <img src="${photo.imageUrl}" alt="Locket photo" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 select-none" draggable="false">
           
           <!-- Floating Caption pill on photo -->
           ${photo.caption ? `
@@ -186,37 +186,139 @@ function renderFeed(photos) {
 
         <!-- Footer Interaction Bar -->
         <div class="flex justify-between items-center px-1 pt-1">
-          <div class="flex items-center bg-fw-subtle rounded-full border border-teal-500/10 overflow-hidden">
-            <button onclick="toggleLike('${photo.id}')" class="px-3 py-1.5 ${isLiked ? 'bg-red-500/20 text-red-500' : 'text-gray-300 hover:bg-white/10'} transition-all flex items-center justify-center focus:outline-none">
-              <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
+          <div class="flex items-center gap-1.5 pl-1">
+            <button id="like-btn-${photo.id}" onclick="toggleLike('${photo.id}')" class="relative text-xl ${isLiked ? 'text-red-500' : 'text-white hover:text-gray-300'} transition-colors flex items-center justify-center focus:outline-none">
+              <i id="like-icon-${photo.id}" class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
             </button>
-            <button onclick="openLikesModal('${photo.id}')" class="px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-all border-l border-white/10 focus:outline-none">
+            <button onclick="openLikesModal('${photo.id}')" id="like-count-${photo.id}" class="text-sm font-bold text-white hover:text-gray-300 transition-all focus:outline-none">
               ${likeCount}
             </button>
           </div>
-
-          <div class="flex gap-1 text-sm">
-            <button onclick="toggleLike('${photo.id}')" class="hover:scale-125 transition-transform p-1">❤️</button>
-            <button onclick="toggleLike('${photo.id}')" class="hover:scale-125 transition-transform p-1">🔥</button>
-            <button onclick="toggleLike('${photo.id}')" class="hover:scale-125 transition-transform p-1">😍</button>
-          </div>
         </div>
-
       </div>
     `;
   }).join('');
 }
 
-// --- TOGGLE LIKE ---
+// --- TOGGLE LIKE (Instagram-style animation) ---
+let _singleTapTimer = null;
+
+function handleSingleTap(imgUrl, sender, caption, timeAgo) {
+  // Delay single tap to allow double-tap to cancel it
+  if (_singleTapTimer) return;
+  _singleTapTimer = setTimeout(() => {
+    _singleTapTimer = null;
+    openPhotoModal(imgUrl, sender, caption, timeAgo);
+  }, 280);
+}
+
+function handleDoubleTap(event, photoId) {
+  // Cancel single-tap (open modal)
+  if (_singleTapTimer) {
+    clearTimeout(_singleTapTimer);
+    _singleTapTimer = null;
+  }
+  event.stopPropagation();
+
+  // Show big heart overlay on the photo
+  const frame = document.getElementById(`photo-frame-${photoId}`);
+  if (frame) {
+    const heart = document.createElement('i');
+    heart.className = 'fa-solid fa-heart ig-double-tap-heart';
+    frame.appendChild(heart);
+    heart.addEventListener('animationend', () => heart.remove());
+  }
+
+  // If not already liked, perform the like
+  const photo = currentPhotos.find(p => p.id === photoId);
+  const isAlreadyLiked = photo && currentUser && (photo.likes || {})[currentUser.id];
+  if (!isAlreadyLiked) {
+    toggleLike(photoId);
+  }
+}
+
+function spawnParticles(btn) {
+  const container = document.createElement('div');
+  container.className = 'ig-particle-container';
+  btn.style.position = 'relative';
+  btn.appendChild(container);
+
+  const colors = ['#ef4444', '#f87171', '#fca5a5', '#ff6b6b', '#ff8a8a'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'ig-particle';
+    const angle = (i / 8) * 360;
+    const dist = 18 + Math.random() * 12;
+    const x = Math.cos(angle * Math.PI / 180) * dist;
+    const y = Math.sin(angle * Math.PI / 180) * dist;
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animation = `ig-particle 0.5s ease-out forwards`;
+    p.style.left = '0px';
+    p.style.top = '0px';
+    p.style.setProperty('--tx', `${x}px`);
+    p.style.setProperty('--ty', `${y}px`);
+    // Use inline keyframes via Web Animations API for unique directions
+    container.appendChild(p);
+    p.animate([
+      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      { transform: `translate(${x}px, ${y}px) scale(0)`, opacity: 0 }
+    ], { duration: 500, easing: 'ease-out', fill: 'forwards' });
+  }
+  setTimeout(() => container.remove(), 600);
+}
+
 async function toggleLike(photoId) {
+  const btn = document.getElementById(`like-btn-${photoId}`);
+  const icon = document.getElementById(`like-icon-${photoId}`);
+  const countEl = document.getElementById(`like-count-${photoId}`);
+  const photo = currentPhotos.find(p => p.id === photoId);
+
+  if (!photo || !currentUser) return;
+
+  const likesMap = photo.likes || {};
+  const wasLiked = !!likesMap[currentUser.id];
+
+  // --- Optimistic UI update ---
+  if (wasLiked) {
+    // Unlike
+    delete likesMap[currentUser.id];
+    if (btn) {
+      btn.classList.remove('text-red-500');
+      btn.classList.add('text-white');
+    }
+    if (icon) {
+      icon.className = 'fa-regular fa-heart';
+      icon.classList.add('ig-heart-unlike');
+      icon.addEventListener('animationend', () => icon.classList.remove('ig-heart-unlike'), { once: true });
+    }
+  } else {
+    // Like
+    likesMap[currentUser.id] = { name: currentUser.name, avatar: currentUser.avatar };
+    if (btn) {
+      btn.classList.remove('text-white');
+      btn.classList.add('text-red-500');
+    }
+    if (icon) {
+      icon.className = 'fa-solid fa-heart ig-heart-animate';
+      icon.addEventListener('animationend', () => icon.classList.remove('ig-heart-animate'), { once: true });
+    }
+    // Particle burst
+    if (btn) spawnParticles(btn);
+  }
+  photo.likes = likesMap;
+  if (countEl) countEl.textContent = Object.keys(likesMap).length;
+
+  // --- Send to server ---
   try {
     const res = await fetch(`/api/photos/${photoId}/like`, { method: 'POST' });
     const data = await res.json();
-    if (data.success) {
-      loadFeed(); // Reload to reflect like state
+    if (!data.success) {
+      // Revert on failure
+      loadFeed();
     }
   } catch (err) {
-    console.error("Like toggle error:", err);
+    console.error('Like toggle error:', err);
+    loadFeed();
   }
 }
 
@@ -232,7 +334,7 @@ function handleFileSelect(event) {
 
   selectedFile = file;
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     showPreview(e.target.result);
   };
   reader.readAsDataURL(file);
@@ -251,6 +353,7 @@ async function startCamera() {
     });
 
     video.srcObject = cameraStream;
+    video.style.transform = 'scaleX(-1)'; // Mirror preview like a real mirror
     video.classList.remove('hidden');
     placeholder.classList.add('hidden');
     controls.classList.remove('hidden');
@@ -276,13 +379,16 @@ function takeSnap() {
   canvas.width = 600;
   canvas.height = 600;
   const ctx = canvas.getContext('2d');
-  
+
+  // Flip horizontally to un-mirror the front camera
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
   ctx.drawImage(video, 0, 0, 600, 600);
-  
+
   stopCamera();
 
   // Convert canvas to File object for FormData upload
-  canvas.toBlob(function(blob) {
+  canvas.toBlob(function (blob) {
     selectedFile = new File([blob], 'camera_snap.jpg', { type: 'image/jpeg' });
     showPreview(canvas.toDataURL('image/jpeg', 0.8));
   }, 'image/jpeg', 0.8);
@@ -369,9 +475,9 @@ function setupCaptionCounter() {
 // --- LOAD PROFILE DATA ---
 async function loadProfileData(targetUserId = null) {
   if (!currentUser) return;
-  
+
   let profileUser = currentUser;
-  
+
   if (targetUserId && targetUserId !== currentUser.id) {
     try {
       const userRes = await fetch(`/api/users/${targetUserId}`);
@@ -387,34 +493,34 @@ async function loadProfileData(targetUserId = null) {
       return showToast('Lỗi tải thông tin!', 'error');
     }
   }
-  
+
   document.getElementById('profileAvatar').innerText = profileUser.avatar || '👤';
   document.getElementById('profileName').innerText = escapeHtml(profileUser.name);
   document.getElementById('profileUsername').innerText = escapeHtml(profileUser.username || 'user');
-  
+
   // Update title based on whether it's personal or someone else's profile
   const titleEl = document.querySelector('#profileView .uppercase.tracking-wider');
   if (titleEl) {
     titleEl.innerText = (profileUser.id === currentUser.id) ? 'Khoảnh khắc của bạn' : `Khoảnh khắc của ${escapeHtml(profileUser.name)}`;
   }
-  
+
   try {
     const res = await fetch('/api/photos');
     const data = await res.json();
-    
+
     if (data.success) {
       const photos = data.photos || [];
       currentPhotos = photos; // store globally for likes modal
       const myPhotos = photos.filter(p => p.userId === profileUser.id);
-      
+
       document.getElementById('profilePostsCount').innerText = myPhotos.length;
-      
+
       let totalLikes = 0;
       myPhotos.forEach(p => {
-         totalLikes += Object.keys(p.likes || {}).length;
+        totalLikes += Object.keys(p.likes || {}).length;
       });
       document.getElementById('profileLikesCount').innerText = totalLikes;
-      
+
       renderProfileFeed(myPhotos);
     }
   } catch (err) {
@@ -483,13 +589,13 @@ async function fetchNotifications() {
     if (data.success) {
       const notifs = data.notifications || [];
       const unreadCount = notifs.filter(n => !n.read).length;
-      
+
       const badge = document.getElementById('notifBadge');
       if (badge) {
         if (unreadCount > 0) badge.classList.remove('hidden');
         else badge.classList.add('hidden');
       }
-      
+
       renderNotifications(notifs);
     }
   } catch (err) { }
@@ -503,7 +609,7 @@ function renderNotifications(notifs) {
     container.innerHTML = '<p class="text-[10px] text-gray-500 text-center py-6">Bạn chưa có thông báo nào.</p>';
     return;
   }
-  
+
   container.innerHTML = notifs.map(n => `
     <div class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 cursor-pointer transition-all ${n.read ? 'opacity-60' : 'bg-white/10'}" onclick="openPhotoModal('${n.photoUrl}', '${escapeHtml(n.senderName)}', '', '${formatTimeAgo(n.createdAt)}'); toggleNotifications()">
       <div class="w-8 h-8 rounded-full bg-fw-subtle flex items-center justify-center text-[16px] shadow-inner shrink-0">${n.senderAvatar || '👤'}</div>
@@ -530,10 +636,10 @@ async function markNotifsRead() {
 function openLikesModal(photoId) {
   const photo = currentPhotos.find(p => p.id === photoId);
   if (!photo) return;
-  
+
   const likesMap = photo.likes || {};
   const userIds = Object.keys(likesMap);
-  
+
   const container = document.getElementById('likesList');
   if (userIds.length === 0) {
     container.innerHTML = '<p class="text-xs text-gray-500 text-center py-6">Chưa có ai thả cảm xúc.</p>';
@@ -542,15 +648,15 @@ function openLikesModal(photoId) {
       const user = likesMap[uid];
       let avatar = '👤';
       let name = 'Người dùng';
-      
+
       if (typeof user === 'object') {
         avatar = user.avatar;
         name = user.name;
       } else if (currentUser && uid === currentUser.id) {
-         avatar = currentUser.avatar;
-         name = currentUser.name;
+        avatar = currentUser.avatar;
+        name = currentUser.name;
       }
-      
+
       return `
         <div class="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-white/5 cursor-pointer border border-transparent hover:border-white/5 transition-all" onclick="closeLikesModal(); switchTab('profile', '${uid}')">
           <div class="w-10 h-10 rounded-full bg-fw-subtle border border-teal-500/10 flex items-center justify-center text-xl shadow-inner shrink-0">${avatar}</div>
@@ -560,7 +666,7 @@ function openLikesModal(photoId) {
       `;
     }).join('');
   }
-  
+
   document.getElementById('likesModal').classList.remove('hidden');
 }
 
@@ -603,7 +709,7 @@ function showToast(msg, type = 'info') {
   }
 
   toast.classList.remove('translate-y-10', 'opacity-0', 'pointer-events-none');
-  
+
   setTimeout(() => {
     toast.classList.add('translate-y-10', 'opacity-0', 'pointer-events-none');
   }, 3000);
