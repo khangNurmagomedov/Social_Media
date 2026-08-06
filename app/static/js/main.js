@@ -188,7 +188,7 @@ function renderFeed(photos) {
         <div class="flex justify-between items-center px-1 pt-1">
           <div class="flex items-center bg-fw-subtle rounded-full border border-teal-500/10 overflow-hidden">
             <button onclick="toggleLike('${photo.id}')" class="px-3 py-1.5 ${isLiked ? 'bg-red-500/20 text-red-500' : 'text-gray-300 hover:bg-white/10'} transition-all flex items-center justify-center focus:outline-none">
-              <i class="${isLiked ? 'fa-solid animate-bounce' : 'fa-regular'} fa-heart text-sm"></i>
+              <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
             </button>
             <button onclick="openLikesModal('${photo.id}')" class="px-3 py-1.5 text-xs font-bold text-gray-300 hover:bg-white/10 hover:text-white transition-all border-l border-white/10 focus:outline-none">
               ${likeCount}
