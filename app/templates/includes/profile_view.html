@@ -1,0 +1,35 @@
+<section id="profileView" class="w-full flex flex-col items-center space-y-6 hidden">
+  <!-- Profile Header Info -->
+  <div class="w-full flex flex-col items-center glass-panel p-6 rounded-3xl space-y-3 relative">
+    <button onclick="switchTab('feed')" class="absolute top-4 left-4 text-gray-400 hover:text-white transition-all">
+      <i class="fa-solid fa-arrow-left text-lg"></i>
+    </button>
+    <div class="w-24 h-24 rounded-full bg-fw-subtle border-2 border-fw-primary flex items-center justify-center text-5xl shadow-lg shadow-teal-500/20 mb-1">
+      <span id="profileAvatar">👤</span>
+    </div>
+    <div class="text-center">
+      <h2 id="profileName" class="text-xl font-extrabold text-white">Name</h2>
+      <p class="text-xs text-gray-400 font-medium">@<span id="profileUsername">username</span></p>
+    </div>
+    
+    <div class="flex gap-8 mt-2 w-full justify-center border-t border-white/10 pt-4">
+      <div class="text-center">
+        <p id="profilePostsCount" class="text-xl font-black text-white">0</p>
+        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Locket</p>
+      </div>
+      <div class="text-center">
+        <p id="profileLikesCount" class="text-xl font-black text-white">0</p>
+        <p class="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Lượt thích</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- User's Posts Grid -->
+  <div class="w-full flex justify-between items-center px-1">
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Khoảnh khắc của bạn</p>
+  </div>
+  
+  <div id="profilePostsList" class="w-full grid grid-cols-2 gap-3 pb-4">
+    <!-- Posts injected dynamically -->
+  </div>
+</section>

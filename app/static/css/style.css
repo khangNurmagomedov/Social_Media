@@ -1,1 +1,63 @@
-/* Main stylesheet */
+body {
+  background-color: #0A0F0F;
+  color: #F3F4F6;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.glass-panel {
+  background: rgba(17, 27, 27, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(13, 148, 136, 0.18);
+}
+
+.glass-pill {
+  background: rgba(13, 148, 136, 0.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(13, 148, 136, 0.22);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0F0F;
+}
+::-webkit-scrollbar-thumb {
+  background: #1A2B2B;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2A3F3F;
+}
+
+.locket-glow {
+  box-shadow: 0 0 40px -5px rgba(13, 148, 136, 0.25), 0 0 80px -15px rgba(45, 212, 191, 0.12);
+}
+
+.squircle-frame {
+  border-radius: 2.2rem;
+  overflow: hidden;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite ease-in-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-bg {
+  background: linear-gradient(90deg, #0D9488 0%, #2DD4BF 40%, #5EEAD4 60%, #0D9488 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}

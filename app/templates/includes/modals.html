@@ -1,0 +1,35 @@
+<!-- PHOTO FULL VIEW MODAL -->
+<div id="photoModal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/90 backdrop-blur-md hidden" onclick="closePhotoModal()">
+  <div class="relative w-full max-w-sm flex flex-col items-center" onclick="event.stopPropagation()">
+    <button onclick="closePhotoModal()" class="absolute -top-12 right-0 text-white text-xl p-2">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <img id="modalImg" src="" class="w-full aspect-square object-cover squircle-frame border-2 border-white/20 shadow-2xl">
+    <div class="w-full mt-4 glass-panel p-4 rounded-2xl text-center space-y-1">
+      <p id="modalSender" class="text-sm font-bold text-fw-accent"></p>
+      <p id="modalCaption" class="text-xs text-gray-200 italic"></p>
+      <p id="modalTime" class="text-[10px] text-gray-400"></p>
+    </div>
+  </div>
+</div>
+
+<!-- LIKES MODAL -->
+<div id="likesModal" class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-all" onclick="closeLikesModal()">
+  <div class="w-full sm:max-w-xs bg-fw-card border border-teal-500/10 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col max-h-[70vh]" onclick="event.stopPropagation()">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-sm font-bold text-white uppercase tracking-wider">Lượt thích</h3>
+      <button onclick="closeLikesModal()" class="text-gray-400 hover:text-white bg-white/5 w-7 h-7 rounded-full flex items-center justify-center transition-all">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="likesList" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 no-scrollbar">
+      <!-- Likes injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- SYSTEM NOTIFICATION TOAST -->
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[70] glass-pill px-5 py-2.5 rounded-full text-xs font-semibold text-white shadow-2xl flex items-center gap-2 transform translate-y-10 opacity-0 pointer-events-none transition-all duration-300">
+  <i id="toastIcon" class="fa-solid fa-circle-check text-fw-accent"></i>
+  <span id="toastMsg">Thông báo</span>
+</div>
