@@ -1,7 +1,7 @@
-import os
 import uuid
 from datetime import datetime
-from flask import Blueprint, request, jsonify, session, current_app
+from flask import Blueprint, request, jsonify, session
+import cloudinary.uploader
 from app.extensions import db
 from app.models import User, Post, Like, Notification
 
@@ -23,12 +23,18 @@ def create_photo():
     file = request.files["image"]
     caption = request.form.get("caption", "")
 
-    ext = os.path.splitext(file.filename)[1] or ".jpg"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
+    # Upload ảnh lên Cloudinary thay vì lưu xuống ổ đĩa
+    public_id = f"social_media/{uuid.uuid4().hex}"
+    upload_result = cloudinary.uploader.upload(
+        file,
+        public_id=public_id,
+        overwrite=True,
+        resource_type="image"
+    )
+    image_url = upload_result["secure_url"]
 
     new_post = Post(
-        imageUrl=f"/uploads/{filename}",
+        imageUrl=image_url,
         caption=caption,
         senderName=current_user.name,
         senderAvatar=current_user.avatar,
@@ -39,6 +45,7 @@ def create_photo():
     db.session.commit()
 
     return jsonify({"success": True, "photo": new_post.to_dict()})
+
 
 @posts_bp.route("/api/photos", methods=["GET"])
 def get_photos():

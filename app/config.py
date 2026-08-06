@@ -1,4 +1,5 @@
 import os
+import cloudinary
 
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -6,9 +7,13 @@ BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
-# 2. Tự động tạo thư mục nếu chưa tồn tại trên server Render
+# 2. Tự động tạo thư mục nếu chưa tồn tại
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# 3. Cấu hình Cloudinary từ biến môi trường CLOUDINARY_URL
+# Cloudinary sẽ tự đọc biến này, không cần cấu hình thủ công
+cloudinary.config(cloudinary_url=os.getenv("CLOUDINARY_URL", ""))
 
 
 class Config:

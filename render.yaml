@@ -18,3 +18,5 @@ services:
         value: 3.10.0
       - key: SECRET_KEY
         generateValue: true
+      - key: CLOUDINARY_URL
+        sync: false
