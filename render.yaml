@@ -1,8 +1,3 @@
-databases:
-  - name: social-media-db
-    databaseName: social_media
-    user: social_user
-
 services:
   - type: web
     name: social-media-web
@@ -11,12 +6,11 @@ services:
     startCommand: "gunicorn run:app"
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: social-media-db
-          property: connectionString
+        sync: false
       - key: PYTHON_VERSION
         value: 3.10.0
       - key: SECRET_KEY
         generateValue: true
       - key: CLOUDINARY_URL
         sync: false
+
