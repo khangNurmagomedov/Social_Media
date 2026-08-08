@@ -675,8 +675,28 @@ function closeLikesModal() {
 }
 
 // --- DELETE PHOTO ---
-function deletePhoto(photoId) {
-  showToast('Tính năng xóa ảnh đang được phát triển!', 'info');
+async function deletePhoto(photoId) {
+  if (!confirm('Bạn có chắc muốn xóa Locket này không?')) return;
+
+  try {
+    const res = await fetch(`/api/photos/${photoId}`, { method: 'DELETE' });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast('Đã xóa Locket thành công!', 'success');
+      // Refresh the current view
+      if (activeTab === 'profile') {
+        loadProfileData();
+      } else {
+        loadFeed();
+      }
+    } else {
+      showToast(data.message || 'Có lỗi xảy ra khi xóa!', 'error');
+    }
+  } catch (err) {
+    console.error('Delete photo error:', err);
+    showToast('Có lỗi xảy ra khi xóa. Vui lòng thử lại!', 'error');
+  }
 }
 
 // --- PHOTO MODAL ---

@@ -103,3 +103,41 @@ def toggle_like(photo_id):
 
     # Reload post to get updated likes
     return jsonify({"success": True, "likes": post.to_dict()["likes"]})
+
+
+@posts_bp.route("/api/photos/<photo_id>", methods=["DELETE"])
+def delete_photo(photo_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "message": "Chưa đăng nhập!"}), 401
+
+    post = Post.query.get(photo_id)
+    if not post:
+        return jsonify({"success": False, "message": "Bài viết không tồn tại!"}), 404
+
+    # Only the post owner can delete
+    if post.userId != user_id:
+        return jsonify({"success": False, "message": "Bạn không có quyền xóa bài viết này!"}), 403
+
+    # Delete all notifications related to this post
+    Notification.query.filter_by(photoId=photo_id).delete()
+
+    # Delete image from Cloudinary
+    try:
+        # Extract public_id from the Cloudinary URL
+        # URL format: https://res.cloudinary.com/.../social_media/xxxx.jpg
+        url_parts = post.imageUrl.split("/")
+        # Find "social_media" segment and build public_id without extension
+        if "social_media" in url_parts:
+            idx = url_parts.index("social_media")
+            filename = url_parts[idx + 1].rsplit(".", 1)[0]  # remove extension
+            public_id = f"social_media/{filename}"
+            cloudinary.uploader.destroy(public_id, resource_type="image")
+    except Exception:
+        pass  # Don't block deletion if Cloudinary cleanup fails
+
+    # Delete the post (likes are cascade-deleted automatically)
+    db.session.delete(post)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Đã xóa bài viết!"})
