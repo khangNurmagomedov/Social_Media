@@ -67,6 +67,15 @@ def toggle_like(photo_id):
 
     if existing_like:
         db.session.delete(existing_like)
+
+        # Also delete the notification so the post owner won't see it
+        old_notif = Notification.query.filter_by(
+            senderId=user_id,
+            photoId=photo_id,
+            type="like",
+        ).first()
+        if old_notif:
+            db.session.delete(old_notif)
     else:
         new_like = Like(
             post_id=photo_id,
